@@ -11,7 +11,7 @@ app.get("/servers", (req, res) => {
 });
 
 // Обработка POST-запроса для добавления нового сервера
-app.post("/addServer", (req, res) => {
+app.post("/servers/add", (req, res) => {
     const { port } = req.body; // Получаем порт из тела запроса
     const ip = req.ip.replace("::ffff:", ""); // Получаем IP клиента (с небольшим преобразованием)
 
@@ -22,6 +22,10 @@ app.post("/addServer", (req, res) => {
         res.status(400).send("Server already exists or invalid data.");
     }
 });
+
+app.get("/servers/onDestroy", (req, res) => {
+    console.log(req.ip.replace("::ffff:", "") + " Условно удален")
+})
 
 app.listen(3000, () => {
     console.log("Server is running on http://localhost:3000");
