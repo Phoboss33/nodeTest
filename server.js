@@ -1,32 +1,59 @@
+// server.js
 const express = require("express");
+const { spawn } = require("child_process");
+const path = require("path");
+
 const app = express();
+app.use(express.json()); // парсим JSON
 
-app.use(express.json()); // Для обработки JSON в POST-запросах
+// Параметры dedicated серверов: через DEDICATED_PORTS или дефолты
+// Теперь запускаем 4 сервера
+const portsEnv = process.env.DEDICATED_PORTS || "7778,7779,7780,7781,6666";
+const dedicatedPorts = portsEnv.split(",").map(p => p.trim()).filter(p => p).map(Number);
+const dedicatedPath = path.join(__dirname, "DedicatedServer", "netcode.exe");
 
+// Запускаем каждый dedicated сервер
+dedicatedPorts.forEach(port => {
+    console.log(`Starting dedicated server: ${dedicatedPath} -port ${port}`);
+    const proc = spawn(dedicatedPath, ["-port", String(port)], {
+        cwd: path.dirname(dedicatedPath),
+        stdio: "inherit"
+    });
+    console.log(`Dedicated server PID: ${proc.pid} on port ${port}`);
+});
+
+// Массив зарегистрированных серверов по API
 let servers = [];
 
-// Обработка GET-запроса для получения списка серверов
+// GET /servers — вернуть список серверов
 app.get("/servers", (req, res) => {
+    console.log("GET /servers →", servers);
     res.json(servers);
 });
 
-// Обработка POST-запроса для добавления нового сервера
+// POST /servers/add — добавить новый сервер
 app.post("/servers/add", (req, res) => {
-    const { port } = req.body; // Получаем порт из тела запроса
-    const ip = req.ip.replace("::ffff:", ""); // Получаем IP клиента (с небольшим преобразованием)
+    const { port } = req.body;
+    const ip = req.ip.replace("::ffff:", "");
+    console.log("POST /servers/add body:", req.body);
 
-    if (port && !servers.find(s => s.ip === ip && s.port === port)) {
-        servers.push({ ip, port });
-        res.status(201).send("Server added.");
-    } else {
-        res.status(400).send("Server already exists or invalid data.");
+    const portNum = Number(port);
+    if (!port || isNaN(portNum)) {
+        console.log("Add failed: invalid port");
+        return res.status(400).send("Invalid data: port is required.");
     }
+
+    if (servers.find(s => s.ip === ip && s.port === portNum)) {
+        console.log("Add failed: duplicate");
+        return res.status(400).send("Server already exists.");
+    }
+
+    servers.push({ ip, port: portNum });
+    console.log("Added:", { ip, port: portNum });
+    console.log("Current servers list:", servers);
+    return res.status(201).send("Server added.");
 });
 
-app.get("/servers/onDestroy", (req, res) => {
-    console.log(req.ip.replace("::ffff:", "") + " Условно удален")
-})
-
-app.listen(3000, () => {
-    console.log("Server is running on http://localhost:3000");
-});
+// Запуск мастер-сервера
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Master-server is running on http://localhost:${PORT}`));
