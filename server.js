@@ -8,7 +8,7 @@ app.use(express.json()); // парсим JSON
 
 // Параметры dedicated серверов: через DEDICATED_PORTS или дефолты
 // Теперь запускаем 4 сервера
-const portsEnv = process.env.DEDICATED_PORTS || "7778,7779,7780,7781,6666";
+const portsEnv = process.env.DEDICATED_PORTS || "7778,7779,6666";
 const dedicatedPorts = portsEnv.split(",").map(p => p.trim()).filter(p => p).map(Number);
 const dedicatedPath = path.join(__dirname, "DedicatedServer", "netcode.exe");
 
