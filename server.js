@@ -1,18 +1,14 @@
-// server.js
 const express = require("express");
 const { spawn } = require("child_process");
 const path = require("path");
 
 const app = express();
-app.use(express.json()); // парсим JSON
+app.use(express.json()); 
 
-// Параметры dedicated серверов: через DEDICATED_PORTS или дефолты
-// Теперь запускаем 4 сервера
 const portsEnv = process.env.DEDICATED_PORTS || "7778,7779,6666";
 const dedicatedPorts = portsEnv.split(",").map(p => p.trim()).filter(p => p).map(Number);
 const dedicatedPath = path.join(__dirname, "DedicatedServer", "netcode.exe");
 
-// Запускаем каждый dedicated сервер
 dedicatedPorts.forEach(port => {
     console.log(`Starting dedicated server: ${dedicatedPath} -port ${port}`);
     const proc = spawn(dedicatedPath, ["-port", String(port)], {
@@ -22,16 +18,13 @@ dedicatedPorts.forEach(port => {
     console.log(`Dedicated server PID: ${proc.pid} on port ${port}`);
 });
 
-// Массив зарегистрированных серверов по API
 let servers = [];
 
-// GET /servers — вернуть список серверов
 app.get("/servers", (req, res) => {
     console.log("GET /servers →", servers);
     res.json(servers);
 });
 
-// POST /servers/add — добавить новый сервер
 app.post("/servers/add", (req, res) => {
     const { port } = req.body;
     const ip = req.ip.replace("::ffff:", "");
