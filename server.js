@@ -5,7 +5,7 @@ const path = require("path");
 const app = express();
 app.use(express.json()); 
 
-const portsEnv = process.env.DEDICATED_PORTS || "7778,7779,7780,7781,6666";
+const portsEnv = process.env.DEDICATED_PORTS || "7778,7779,7780";
 const dedicatedPorts = portsEnv.split(",").map(p => p.trim()).filter(p => p).map(Number);
 const dedicatedPath = path.join(__dirname, "DedicatedServer", "netcode.exe");
 
